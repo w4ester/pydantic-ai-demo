@@ -400,9 +400,9 @@
             </p>
             
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; font-size: 0.9rem;">OpenAI API Key</label>
-                <input type="password" id="openaiKey" class="input-field" 
-                       placeholder="sk-..." style="width: 100%;">
+                <label style="display: block; margin-bottom: 8px; font-size: 0.9rem;">Anthropic API Key</label>
+                <input type="password" id="anthropicKey" class="input-field" 
+                       placeholder="sk-ant-..." style="width: 100%;">
             </div>
             
             <div style="margin-bottom: 20px;">
@@ -432,8 +432,8 @@
 
         <div class="api-status">
             <div class="status-item">
-                <span class="status-dot" id="openaiStatus"></span>
-                <span>OpenAI API</span>
+                <span class="status-dot" id="anthropicStatus"></span>
+                <span>Anthropic Claude</span>
             </div>
             <div class="status-item">
                 <span class="status-dot" id="logfireStatus"></span>
@@ -449,7 +449,7 @@
                 <div class="feature-icon">🧠</div>
                 <div class="feature-title">AI-Powered Validation</div>
                 <div class="feature-description">
-                    Real OpenAI integration with structured output validation using Pydantic models
+                    Real Claude 4 Sonnet integration with structured output validation using Pydantic models
                 </div>
             </div>
             <div class="feature-card">
@@ -483,9 +483,7 @@
             <div id="chat-tab" class="tab-content">
                 <div class="model-select">
                     <select id="modelSelect" class="select-field">
-                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Fast & Cheap)</option>
-                        <option value="gpt-4">GPT-4 (More Capable)</option>
-                        <option value="gpt-4-turbo-preview">GPT-4 Turbo (Latest)</option>
+                        <option value="claude-sonnet-4-20250514">Claude 4 Sonnet (Balanced Performance)</option>
                     </select>
                 </div>
 
@@ -532,17 +530,18 @@
             <div id="code-tab" class="tab-content" style="display: none;">
                 <div class="code-example">
                     <pre>// Frontend Integration (this demo)
-const response = await fetch('https://api.openai.com/v1/chat/completions', {
+const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-        model: '<gpt-4.1-mini class="1"></gpt-4.1-mini>',
-        messages: messages,
-        response_format: { type: "json_object" },
-        temperature: 0.7
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        system: 'You are a helpful assistant',
+        messages: messages
     })
 });
 
@@ -563,7 +562,7 @@ logfire.configure(token="your-token")
 
 # Create agent with structured output
 agent = Agent(
-    'openai:gpt-4',
+    'anthropic:claude-sonnet-4-20250514',
     result_type=UserProfile,
     system_prompt="Extract user information from text"
 )
@@ -592,13 +591,13 @@ async def extract_user(text: str):
 
     <script>
         // Configuration
-        let openaiKey = localStorage.getItem('openai_api_key') || '';
+        let anthropicKey = localStorage.getItem('anthropic_api_key') || '';
         let logfireToken = localStorage.getItem('logfire_token') || '';
         let messages = [];
 
         // Check if keys are configured on load
         window.onload = function() {
-            if (!openaiKey) {
+            if (!anthropicKey) {
                 document.getElementById('setupModal').classList.remove('setup-hidden');
             } else {
                 updateConnectionStatus();
@@ -606,15 +605,15 @@ async def extract_user(text: str):
         };
 
         function saveApiKeys() {
-            openaiKey = document.getElementById('openaiKey').value;
+            anthropicKey = document.getElementById('anthropicKey').value;
             logfireToken = document.getElementById('logfireToken').value;
 
-            if (!openaiKey) {
-                alert('OpenAI API key is required');
+            if (!anthropicKey) {
+                alert('Anthropic API key is required');
                 return;
             }
 
-            localStorage.setItem('openai_api_key', openaiKey);
+            localStorage.setItem('anthropic_api_key', anthropicKey);
             localStorage.setItem('logfire_token', logfireToken);
 
             document.getElementById('setupModal').classList.add('setup-hidden');
@@ -622,13 +621,13 @@ async def extract_user(text: str):
         }
 
         function showSetupModal() {
-            document.getElementById('openaiKey').value = openaiKey;
+            document.getElementById('anthropicKey').value = anthropicKey;
             document.getElementById('logfireToken').value = logfireToken;
             document.getElementById('setupModal').classList.remove('setup-hidden');
         }
 
         function updateConnectionStatus() {
-            document.getElementById('openaiStatus').classList.toggle('connected', !!openaiKey);
+            document.getElementById('anthropicStatus').classList.toggle('connected', !!anthropicKey);
             document.getElementById('logfireStatus').classList.toggle('connected', !!logfireToken);
         }
 
@@ -652,7 +651,7 @@ async def extract_user(text: str):
             const spinner = document.getElementById('loadingSpinner');
             const model = document.getElementById('modelSelect').value;
 
-            if (!input.value.trim() || !openaiKey) return;
+            if (!input.value.trim() || !anthropicKey) return;
 
             const userMessage = input.value;
             input.value = '';
@@ -679,17 +678,22 @@ async def extract_user(text: str):
             try {
                 const startTime = Date.now();
                 
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                // Convert messages format for Claude API
+                const systemMessage = messages.find(m => m.role === 'system');
+                const conversationMessages = messages.filter(m => m.role !== 'system');
+                
+                const response = await fetch('https://api.anthropic.com/v1/messages', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${openaiKey}`,
+                        'x-api-key': anthropicKey,
+                        'anthropic-version': '2023-06-01',
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: model,
-                        messages: messages,
-                        temperature: 0.7,
-                        max_tokens: 500
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 500,
+                        system: systemMessage ? systemMessage.content : 'You are a helpful assistant knowledgeable about Pydantic AI and Logfire.',
+                        messages: conversationMessages
                     })
                 });
 
@@ -700,14 +704,15 @@ async def extract_user(text: str):
                     throw new Error(data.error?.message || 'API request failed');
                 }
 
-                const assistantMessage = data.choices[0].message.content;
+                const assistantMessage = data.content[0].text;
                 messages.push({ role: 'assistant', content: assistantMessage });
 
                 // Add assistant message to display
                 addMessage(output, assistantMessage, 'assistant');
 
-                // Log response details
-                logEvent('RESPONSE', `Latency: ${elapsed}ms, Tokens: ${data.usage.total_tokens}, Cost: $${calculateCost(data.usage, model)}`);
+                // Log response details  
+                const totalTokens = data.usage.input_tokens + data.usage.output_tokens;
+                logEvent('RESPONSE', `Latency: ${elapsed}ms, Tokens: ${totalTokens}, Cost: $${calculateClaudeCost(data.usage)}`);
 
                 // Send to Logfire if configured
                 if (logfireToken) {
@@ -715,7 +720,7 @@ async def extract_user(text: str):
                         model: model,
                         latency: elapsed,
                         tokens: data.usage,
-                        cost: calculateCost(data.usage, model)
+                        cost: calculateClaudeCost(data.usage)
                     });
                 }
 
@@ -732,7 +737,7 @@ async def extract_user(text: str):
             const input = document.getElementById('extractInput');
             const output = document.getElementById('structuredOutput');
 
-            if (!input.value.trim() || !openaiKey) return;
+            if (!input.value.trim() || !anthropicKey) return;
 
             const text = input.value;
             
@@ -740,29 +745,26 @@ async def extract_user(text: str):
             logEvent('EXTRACT', 'Starting structured extraction');
 
             try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                const response = await fetch('https://api.anthropic.com/v1/messages', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${openaiKey}`,
+                        'x-api-key': anthropicKey,
+                        'anthropic-version': '2023-06-01',
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: 'gpt-3.5-turbo',
-                        messages: [
-                            {
-                                role: 'system',
-                                content: `Extract user information and return as JSON with these fields:
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 1000,
+                        system: `Extract user information and return as JSON with these fields:
                                 - name (string, required)
                                 - age (number, optional)
                                 - email (string, optional) 
                                 - company (string, optional)
                                 - role (string, optional)
-                                Only include fields that are clearly mentioned.`
-                            },
+                                Only include fields that are clearly mentioned. Return only valid JSON.`,
+                        messages: [
                             { role: 'user', content: text }
-                        ],
-                        response_format: { type: "json_object" },
-                        temperature: 0
+                        ]
                     })
                 });
 
@@ -772,7 +774,7 @@ async def extract_user(text: str):
                     throw new Error(data.error?.message || 'API request failed');
                 }
 
-                const extracted = JSON.parse(data.choices[0].message.content);
+                const extracted = JSON.parse(data.content[0].text);
                 
                 // Display structured data
                 output.innerHTML = `
@@ -839,16 +841,10 @@ async def extract_user(text: str):
             return 'gpt-4.1-mini';
         }
 
-        function calculateCost(usage, model) {
-            const costs = {
-                'gpt-3.5-turbo': { input: 0.0005, output: 0.0015 },
-                'gpt-4': { input: 0.03, output: 0.06 },
-                'gpt-4-turbo-preview': { input: 0.01, output: 0.03 }
-            };
-            
-            const modelCosts = costs[model] || costs['gpt-3.5-turbo'];
-            const inputCost = (usage.prompt_tokens / 1000) * modelCosts.input;
-            const outputCost = (usage.completion_tokens / 1000) * modelCosts.output;
+        function calculateClaudeCost(usage) {
+            // Claude 4 Sonnet pricing: $3 per million input tokens, $15 per million output tokens
+            const inputCost = (usage.input_tokens / 1000000) * 3.00;
+            const outputCost = (usage.output_tokens / 1000000) * 15.00;
             
             return (inputCost + outputCost).toFixed(4);
         }

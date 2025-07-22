@@ -400,9 +400,9 @@
             </p>
             
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; font-size: 0.9rem;">AI-Labs Key</label>
-                <input type="password" id="openaiKey" class="input-field" 
-                       placeholder="al-..." style="width: 100%;">
+                <label style="display: block; margin-bottom: 8px; font-size: 0.9rem;">Anthropic API Key</label>
+                <input type="password" id="anthropicKey" class="input-field" 
+                       placeholder="sk-ant-..." style="width: 100%;">
             </div>
             
             <div style="margin-bottom: 20px;">
@@ -432,8 +432,8 @@
 
         <div class="api-status">
             <div class="status-item">
-                <span class="status-dot" id="openaiStatus"></span>
-                <span>AI-Labs Jr API</span>
+                <span class="status-dot" id="anthropicStatus"></span>
+                <span>Anthropic Claude</span>
             </div>
             <div class="status-item">
                 <span class="status-dot" id="logfireStatus"></span>
@@ -449,7 +449,7 @@
                 <div class="feature-icon">🧠</div>
                 <div class="feature-title">AI-Powered Validation</div>
                 <div class="feature-description">
-                    AI-Labs Jr integration with structured output validation using Pydantic models
+                    Real Claude 4 Sonnet integration with structured output validation using Pydantic models
                 </div>
             </div>
             <div class="feature-card">
@@ -461,9 +461,9 @@
             </div>
             <div class="feature-card">
                 <div class="feature-icon">⚡</div>
-                <div class="feature-title">AI-Labs Jr Engine</div>
+                <div class="feature-title">Claude 4 Sonnet Engine</div>
                 <div class="feature-description">
-                    Next-generation language model featuring 30% improved tool calling accuracy, 1M token context window, and enterprise-grade reliability
+                    Advanced language model with 200K token context window, multimodal capabilities, and superior reasoning performance
                 </div>
             </div>
         </div>
@@ -483,7 +483,7 @@
             <div id="chat-tab" class="tab-content">
                 <div class="model-select">
                     <select id="modelSelect" class="select-field">
-                        <option value="gpt-4.1-mini">AI-Labs Jr (Advanced Tool Calling)</option>
+                        <option value="claude-sonnet-4-20250514">Claude 4 Sonnet (Balanced Performance)</option>
                     </select>
                 </div>
 
@@ -530,17 +530,18 @@
             <div id="code-tab" class="tab-content" style="display: none;">
                 <div class="code-example">
                     <pre>// Frontend Integration (this demo)
-const response = await fetch('https://api.openai.com/v1/chat/completions', {
+const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-        model: 'gpt-4.1-mini',  // AI-Labs Jr backend model
-        messages: messages,
-        response_format: { type: "json_object" },
-        temperature: 0.7
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        system: 'You are a helpful assistant',
+        messages: messages
     })
 });
 
@@ -561,7 +562,7 @@ logfire.configure(token="your-token")
 
 # Create agent with structured output
 agent = Agent(
-    'openai:gpt-4',
+    'anthropic:claude-sonnet-4-20250514',
     result_type=UserProfile,
     system_prompt="Extract user information from text"
 )
@@ -591,13 +592,13 @@ async def extract_user(text: str):
 
     <script>
         // Configuration
-        let openaiKey = localStorage.getItem('openai_api_key') || '';
+        let anthropicKey = localStorage.getItem('anthropic_api_key') || '';
         let logfireToken = localStorage.getItem('logfire_token') || '';
         let messages = [];
 
         // Check if keys are configured on load
         window.onload = function() {
-            if (!openaiKey) {
+            if (!anthropicKey) {
                 document.getElementById('setupModal').classList.remove('setup-hidden');
             } else {
                 updateConnectionStatus();
@@ -605,15 +606,15 @@ async def extract_user(text: str):
         };
 
         function saveApiKeys() {
-            openaiKey = document.getElementById('openaiKey').value;
+            anthropicKey = document.getElementById('anthropicKey').value;
             logfireToken = document.getElementById('logfireToken').value;
 
-            if (!openaiKey) {
-                alert('AI-Labs Key is required');
+            if (!anthropicKey) {
+                alert('Anthropic API key is required');
                 return;
             }
 
-            localStorage.setItem('openai_api_key', openaiKey);
+            localStorage.setItem('anthropic_api_key', anthropicKey);
             localStorage.setItem('logfire_token', logfireToken);
 
             document.getElementById('setupModal').classList.add('setup-hidden');
@@ -621,13 +622,13 @@ async def extract_user(text: str):
         }
 
         function showSetupModal() {
-            document.getElementById('openaiKey').value = openaiKey;
+            document.getElementById('anthropicKey').value = anthropicKey;
             document.getElementById('logfireToken').value = logfireToken;
             document.getElementById('setupModal').classList.remove('setup-hidden');
         }
 
         function updateConnectionStatus() {
-            document.getElementById('openaiStatus').classList.toggle('connected', !!openaiKey);
+            document.getElementById('anthropicStatus').classList.toggle('connected', !!anthropicKey);
             document.getElementById('logfireStatus').classList.toggle('connected', !!logfireToken);
         }
 
@@ -651,7 +652,7 @@ async def extract_user(text: str):
             const spinner = document.getElementById('loadingSpinner');
             const model = document.getElementById('modelSelect').value;
 
-            if (!input.value.trim() || !openaiKey) return;
+            if (!input.value.trim() || !anthropicKey) return;
 
             const userMessage = input.value;
             input.value = '';
@@ -693,17 +694,22 @@ Answer based on the user's specific question with confidence and precision.`
             try {
                 const startTime = Date.now();
                 
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                // Convert messages format for Claude API
+                const systemMessage = messages.find(m => m.role === 'system');
+                const conversationMessages = messages.filter(m => m.role !== 'system');
+                
+                const response = await fetch('https://api.anthropic.com/v1/messages', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${openaiKey}`,
+                        'x-api-key': anthropicKey,
+                        'anthropic-version': '2023-06-01',
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: model,
-                        messages: messages,
-                        temperature: 0.7,
-                        max_tokens: 500
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 500,
+                        system: systemMessage ? systemMessage.content : 'You are an AI-Labs Jr powered assistant with deep expertise in Pydantic AI and Logfire integration.',
+                        messages: conversationMessages
                     })
                 });
 
@@ -714,14 +720,15 @@ Answer based on the user's specific question with confidence and precision.`
                     throw new Error(data.error?.message || 'API request failed');
                 }
 
-                const assistantMessage = data.choices[0].message.content;
+                const assistantMessage = data.content[0].text;
                 messages.push({ role: 'assistant', content: assistantMessage });
 
                 // Add assistant message to display
                 addMessage(output, assistantMessage, 'assistant');
 
                 // Log response details
-                logEvent('RESPONSE', `Latency: ${elapsed}ms, Tokens: ${data.usage.total_tokens}, Cost: $${calculateCost(data.usage, model)}`);
+                const totalTokens = data.usage.input_tokens + data.usage.output_tokens;
+                logEvent('RESPONSE', `Latency: ${elapsed}ms, Tokens: ${totalTokens}, Cost: $${calculateClaudeCost(data.usage)}`);
 
                 // Send to Logfire if configured
                 if (logfireToken) {
@@ -729,7 +736,7 @@ Answer based on the user's specific question with confidence and precision.`
                         model: model,
                         latency: elapsed,
                         tokens: data.usage,
-                        cost: calculateCost(data.usage, model)
+                        cost: calculateClaudeCost(data.usage)
                     });
                 }
 
@@ -746,7 +753,7 @@ Answer based on the user's specific question with confidence and precision.`
             const input = document.getElementById('extractInput');
             const output = document.getElementById('structuredOutput');
 
-            if (!input.value.trim() || !openaiKey) return;
+            if (!input.value.trim() || !anthropicKey) return;
 
             const text = input.value;
             
@@ -754,18 +761,17 @@ Answer based on the user's specific question with confidence and precision.`
             logEvent('EXTRACT', 'Starting structured extraction');
 
             try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                const response = await fetch('https://api.anthropic.com/v1/messages', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${openaiKey}`,
+                        'x-api-key': anthropicKey,
+                        'anthropic-version': '2023-06-01',
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: 'gpt-4.1-mini',
-                        messages: [
-                            {
-                                role: 'system',
-                                content: `Extract user information from the provided text. Return a JSON object with exactly these fields:
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 1000,
+                        system: `Extract user information from the provided text. Return a JSON object with exactly these fields:
                                 - name: string (required) - the person's full name
                                 - age: number (optional) - their age as an integer if mentioned
                                 - email: string (optional) - their email address if provided
@@ -773,12 +779,10 @@ Answer based on the user's specific question with confidence and precision.`
                                 - role: string (optional) - their job title or role if specified
                                 
                                 Only include fields that are explicitly mentioned in the text. Do not infer or guess information.
-                                Ensure the JSON is valid and properly formatted.`
-                            },
+                                Ensure the JSON is valid and properly formatted.`,
+                        messages: [
                             { role: 'user', content: text }
-                        ],
-                        response_format: { type: "json_object" },
-                        temperature: 0
+                        ]
                     })
                 });
 
@@ -788,7 +792,7 @@ Answer based on the user's specific question with confidence and precision.`
                     throw new Error(data.error?.message || 'API request failed');
                 }
 
-                const extracted = JSON.parse(data.choices[0].message.content);
+                const extracted = JSON.parse(data.content[0].text);
                 
                 // Display structured data
                 output.innerHTML = `
@@ -847,18 +851,12 @@ Answer based on the user's specific question with confidence and precision.`
             logContainer.scrollTop = logContainer.scrollHeight;
         }
 
-        function calculateCost(usage, model) {
-            // AI-Labs Jr competitive pricing
-            // Optimized for enterprise use with significant cost savings
-            const costs = {
-                'gpt-4.1-mini': { input: 0.00015, output: 0.00060 }
-            };
+        function calculateClaudeCost(usage) {
+            // Claude 4 Sonnet pricing: $3 per million input tokens, $15 per million output tokens
+            const inputCost = (usage.input_tokens / 1000000) * 3.00;
+            const outputCost = (usage.output_tokens / 1000000) * 15.00;
             
-            const modelCosts = costs[model] || costs['gpt-4.1-mini'];
-            const inputCost = (usage.prompt_tokens / 1000) * modelCosts.input;
-            const outputCost = (usage.completion_tokens / 1000) * modelCosts.output;
-            
-            return (inputCost + outputCost).toFixed(5);
+            return (inputCost + outputCost).toFixed(4);
         }
 
         async function sendToLogfire(data) {
