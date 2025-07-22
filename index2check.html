@@ -394,9 +394,9 @@
     <!-- Setup Modal -->
     <div id="setupModal" class="setup-modal setup-hidden">
         <div class="setup-content">
-            <h2 style="margin-bottom: 20px; text-align: center;">Configure AI-Labs Access</h2>
+            <h2 style="margin-bottom: 20px; text-align: center;">Configure API Keys</h2>
             <p style="color: #9ca3af; margin-bottom: 20px; font-size: 0.9rem;">
-                Enter your credentials to enable the AI-Labs Jr demo. Keys are stored locally in your browser.
+                Enter your API keys to enable the live demo. Keys are stored locally in your browser.
             </p>
             
             <div style="margin-bottom: 20px;">
@@ -578,7 +578,7 @@ async def extract_user(text: str):
                 </div>
 
                 <div class="info-message">
-                    <strong>Key Benefits with AI-Labs Jr:</strong><br>
+                    <strong>Key Benefits with Claude 4 Sonnet:</strong><br>
                     • Enterprise-grade language model with enhanced reliability<br>
                     • 30% better tool calling performance than standard models<br>
                     • 1M token context window for complex conversations<br>
@@ -669,18 +669,18 @@ async def extract_user(text: str):
             if (messages.length === 1) {
                 messages.unshift({
                     role: 'system',
-                    content: `You are an AI-Labs Jr powered assistant with deep expertise in Pydantic AI and Logfire integration.
+                    content: `You are a Claude 4 Sonnet powered assistant with deep expertise in Pydantic AI and Logfire integration.
 
 Your capabilities include:
 1. Explaining Pydantic AI's type-safe validation and structured output features
 2. Demonstrating how Logfire provides comprehensive observability for AI applications
-3. Showcasing AI-Labs Jr's advanced tool calling (30% better than standard models)
-4. Highlighting the 1M token context window for complex conversations
+3. Showcasing Claude 4 Sonnet's advanced reasoning and multimodal capabilities
+4. Highlighting the 200K token context window for complex conversations
 5. Providing practical examples of enterprise AI implementation
 
 Guidelines:
 - Give clear, structured responses with specific examples
-- Emphasize AI-Labs Jr's enterprise-grade capabilities when relevant
+- Emphasize Claude 4 Sonnet's superior reasoning and balanced performance when relevant
 - Keep responses informative yet concise
 - Focus on practical business applications
 
@@ -689,7 +689,7 @@ Answer based on the user's specific question with confidence and precision.`
             }
 
             // Log the request
-            logEvent('REQUEST', `Model: AI-Labs Jr, Tokens: ~${userMessage.split(' ').length * 2}`);
+            logEvent('REQUEST', `Model: Claude 4 Sonnet, Tokens: ~${userMessage.split(' ').length * 2}`);
 
             try {
                 const startTime = Date.now();
@@ -708,7 +708,7 @@ Answer based on the user's specific question with confidence and precision.`
                     body: JSON.stringify({
                         model: 'claude-sonnet-4-20250514',
                         max_tokens: 500,
-                        system: systemMessage ? systemMessage.content : 'You are an AI-Labs Jr powered assistant with deep expertise in Pydantic AI and Logfire integration.',
+                        system: systemMessage ? systemMessage.content : 'You are a Claude 4 Sonnet powered assistant with deep expertise in Pydantic AI and Logfire integration.',
                         messages: conversationMessages
                     })
                 });
@@ -821,7 +821,7 @@ Answer based on the user's specific question with confidence and precision.`
             const timestamp = new Date().toLocaleTimeString();
             messageDiv.innerHTML = `
                 <div class="message-header">
-                    <span>${type === 'user' ? 'You' : type === 'assistant' ? 'AI-Labs Assistant' : 'System'}</span>
+                    <span>${type === 'user' ? 'You' : type === 'assistant' ? 'Claude Assistant' : 'System'}</span>
                     <span>${timestamp}</span>
                 </div>
                 <div class="message-content">${content}</div>
